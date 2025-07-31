@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Decryption Complete</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #202040;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .result {
+            background: #543864;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h2 {
+            text-align: center;
+            color: #fcb045;
+        }
+        p {
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        a {
+            color: #fcb045;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="result">
+        <h2>File Decrypted Successfully ✅</h2>
+        <p><strong>Download:</strong> <a href="{{ url_for('download', filename=filename) }}">{{ filename }}</a></p>
+        <a href="{{ url_for('index') }}">← Back to Home</a>
+    </div>
+</body>
+</html>

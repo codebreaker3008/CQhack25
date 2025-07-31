@@ -1,8 +1,13 @@
-def xor_encrypt(message, key):
-    # Repeat the key to match message length
-    repeated_key = (key * ((len(message) // len(key)) + 1))[:len(message)]
-    return ''.join(chr(ord(c) ^ int(k)) for c, k in zip(message, repeated_key))
+import random
+import string
 
-def xor_decrypt(ciphertext, key):
-    # XOR decryption is symmetric
-    return xor_encrypt(ciphertext, key)
+def xor_encrypt(message, key):
+    repeated_key = (key * ((len(message) // len(key)) + 1))[:len(message)]
+    return ''.join(chr(ord(m) ^ ord(k)) for m, k in zip(message, repeated_key))
+
+def xor_decrypt(cipher, key):
+    return xor_encrypt(cipher, key)
+
+def gibberish(s):
+    gib = ''.join(random.choice(string.ascii_letters + string.digits + "!@#$%^&*") for _ in s)
+    return gib

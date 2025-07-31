@@ -30,6 +30,14 @@ def bb84_protocol(n_bits=32):
     bob_results = measure_bits(encoded_qubits, bob_bases)
 
     raw_key = sift_key(alice_bases, bob_bases, bob_results)
-    
+
     # Return raw key as a binary string
     return ''.join(map(str, raw_key))
+
+def bb84_protocol(length):
+    bases = ['Z', 'X']
+    sender_bits = [random.randint(0, 1) for _ in range(length)]
+    sender_bases = [random.choice(bases) for _ in range(length)]
+    receiver_bases = [random.choice(bases) for _ in range(length)]
+    key = ''.join(str(sender_bits[i]) for i in range(length) if sender_bases[i] == receiver_bases[i])
+    return key
