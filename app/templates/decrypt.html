@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Decrypt Message</title>
+</head>
+<body>
+    <h1>Decrypt Message</h1>
+    <form method="post">
+        <label>Encrypted Message:</label><br>
+        <textarea name="encrypted" rows="4" cols="50" required></textarea><br><br>
+
+        <label>Quantum Key (BB84):</label><br>
+        <input type="text" name="key" required><br><br>
+
+        <button type="submit">Decrypt</button>
+    </form>
+
+    {% if decrypted %}
+        <h2>Decryption Result</h2>
+        <p><strong>Encrypted Message:</strong> {{ encrypted }}</p>
+        <p><strong>Key:</strong> {{ key }}</p>
+        <p><strong>Decrypted Message:</strong> {{ decrypted }}</p>
+    {% endif %}
+    <br>
+    <a href="/">Back to Home</a>
+</body>
+</html>
