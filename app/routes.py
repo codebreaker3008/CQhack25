@@ -1,34 +1,78 @@
 import os
-from flask import render_template, request, redirect, url_for, send_from_directory
+import uuid
+import base64
+from flask import render_template, request, send_from_directory, current_app
 from app import app
 from qkd.bb84 import bb84_protocol
 from qkd.utils import xor_encrypt, xor_decrypt, gibberish
-import uuid
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 def index():
-    if request.method == "POST":
-        message = request.form["message"]
-        key = bb84_protocol(32)
-        encrypted = xor_encrypt(message, key)
-        gibberish_msg = gibberish(encrypted)
-        return render_template("encrypt_result.html", original=message, encrypted=gibberish_msg, key=key)
     return render_template("index.html")
 
-@app.route("/decrypt", methods=["GET", "POST"])
-def decrypt():
-    if request.method == "POST":
-        encrypted = request.form["encrypted"]
-        key = request.form["key"]
-        real_encrypted = ''.join(filter(str.isalnum, encrypted))[:len(key)]  # simplified
-        decrypted = xor_decrypt(real_encrypted, key)
-        return render_template("decrypt_result.html", decrypted=decrypted, key=key)
-    return render_template("decrypt.html")
 
+# Encrypt route: called when user submits a message to encrypt
+@app.route("/encrypt", methods=["POST"])
+def encrypt_message():
+    message = request.form.get("message", "")
+    if not message:
+        return render_template("index.html", error="Please enter a message to encrypt.")
+
+    # generate quantum key
+    key = bb84_protocol(32)
+
+    # XOR-encrypt (returns a string with possibly non-printable chars)
+    encrypted_raw = xor_encrypt(message, key)
+
+    # For safe copy/paste: convert to bytes via latin1 and base64 encode
+    encrypted_bytes = encrypted_raw.encode("latin-1")
+    encrypted_b64 = base64.b64encode(encrypted_bytes).decode("ascii")
+
+    # A "gibberish" visual we show in UI so the ciphertext looks like random symbols
+    gib_display = gibberish(encrypted_raw)
+
+    return render_template(
+        "encrypt_result.html",
+        original=message,
+        encrypted_gib=gib_display,
+        encrypted_b64=encrypted_b64,
+        key=key
+    )
+
+
+# Decrypt page (GET shows form; POST processes and shows result)
+@app.route("/decrypt", methods=["GET", "POST"])
+def decrypt_message():
+    if request.method == "GET":
+        return render_template("decrypt.html")
+
+    # POST: get base64 encrypted string and key
+    encrypted_b64 = request.form.get("encrypted_message", "").strip()
+    key = request.form.get("quantum_key", "").strip()
+
+    if not encrypted_b64:
+        return render_template("decrypt.html", error="Please paste the encrypted Base64 string.")
+    if not key:
+        return render_template("decrypt.html", error="Please enter the quantum key used for encryption.")
+
+    try:
+        # decode base64 -> bytes -> latin1 string (original xor_encrypt output)
+        encrypted_bytes = base64.b64decode(encrypted_b64)
+        encrypted_raw = encrypted_bytes.decode("latin-1")
+
+        # decrypt using xor_decrypt (symmetric)
+        decrypted = xor_decrypt(encrypted_raw, key)
+    except Exception as e:
+        return render_template("decrypt.html", error=f"Decryption failed: {e}")
+
+    return render_template("decrypt_result.html", encrypted_b64=encrypted_b64, key=key, decrypted_message=decrypted)
+
+
+# --- file transfer routes left functionally the same (unchanged) ---
 @app.route("/transfer", methods=["GET", "POST"])
 def transfer():
     if request.method == "POST":
@@ -51,9 +95,11 @@ def transfer():
             return render_template("transfer_result.html", original=filename, encrypted=enc_filename, key=key)
     return render_template("transfer.html")
 
+
 @app.route("/download/<filename>")
 def download(filename):
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
+
 
 @app.route("/decrypt-file", methods=["GET", "POST"])
 def decrypt_file():
